@@ -3,7 +3,8 @@ const userService = require('../api/service/userService');
 const should = chai.should();
 const { MongoClient } = require('mongodb');
 
-const mongoDbUrl = 'mongodb://localhost:27017/Cookmaster';
+const mongoDbUrl = 'mongodb://mongodb:27017/Cookmaster';
+
 
 
 describe('Teste da funcao addUser', () => {
