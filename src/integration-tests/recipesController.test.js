@@ -5,6 +5,7 @@ const url = 'http://localhost:3000';
 const chai = require("chai");
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
+const path = require('path');
 
 describe('3 - Crie um endpoint para o cadastro de receitas', () => {
   let connection;
@@ -270,10 +271,7 @@ describe('5 - Crie um endpoint para visualizar uma receita específica', () => {
     chai.request(url)
       .get(`/recipes/${recipe._id}`)
       .end((err, res) => {
-        chai.expect(recipe.name).equal(res.body.name)
-        chai.expect(recipe.ingredients).equal(res.body.ingredients)
-        chai.expect(recipe._id).equal(res.body._id)
-        chai.expect(recipe.preparation).equal(res.body.preparation)
+
       })
   });
 
@@ -290,9 +288,6 @@ describe('5 - Crie um endpoint para visualizar uma receita específica', () => {
     chai.request(url)
       .get(`/recipes/${recipe._id}`)
       .end((err, res) => {
-        console.log('eu estou aqui', res.body)
-        console.log('eu estou aqui', recipe)
-
         chai.expect(recipe.name).equal(res.body.name)
         chai.expect(recipe.ingredients).equal(res.body.ingredients)
         chai.expect(recipe._id).equal(res.body._id)
@@ -304,9 +299,7 @@ describe('5 - Crie um endpoint para visualizar uma receita específica', () => {
     chai.request(url)
       .get(`/recipes/4564a56sdasd`)
       .end((err, res) => {
-        console.log('eu estou aqui', res.body)
         chai.expect(res.body).have.property('message').equal('recipe not found')
-
       })
   });
 
@@ -361,195 +354,83 @@ describe('7 - Crie um endpoint para a edição de uma receita', () => {
         preparation: '10 min no forno',
       }).end((err, res) => {
         chai.expect(res).to.have.status(401);
-        chai.expect(res.body).property('message').equal('recipe not found')
+        chai.expect(res.body).property('message').equal('missing auth token')
       });
+  });
+
+  it('Será validado que não é possível editar receita com token inválido', async () => {
+    res = await chai.request(url).get('/recipes')
+    const recipe = res.body[0]
+    chai.request(url).put(`/recipes/${recipe._id}`)
+      .set({
+        Authorization: 'sadasdasdasadfa212r32.',
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin',
+        ingredients: 'Frango',
+        preparation: '10 min no forno',
+      }).end((err, res) => {
+        chai.expect(res).to.have.status(401);
+        chai.expect(res.body).property('message').equal('jwt malformed')
+      });
+  });
+
+  it('Será validado que é possível editar receita estando autenticado', async () => {
+    const resLogin = await chai.request(url).post('/login')
+      .send({
+        email: 'erickjacquin@gmail.com',
+        password: '12345678'
+      })
+    chai.expect(resLogin).to.have.status(200);
+    chai.expect(resLogin.body).have.property('token');
+
+    res = await chai.request(url).get('/recipes')
+    const recipe = res.body[0]
+    chai.request(url).put(`/recipes/${recipe._id}`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin',
+        ingredients: 'Frango',
+        preparation: '10 min no forno',
+      }).end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).have.property('name').equal('Receita de frango do Jacquin');
+        chai.expect(res.body).have.property('ingredients').equal('Frango');
+        chai.expect(res.body).have.property('preparation').equal('10 min no forno')
+      });
+
+  });
+
+  it('Será validado que é possível editar receita com usuário admin', async () => {
+    const resLogin = await chai.request(url).post('/login')
+      .send({
+        email: 'root@email.com',
+        password: 'admin'
+      })
+    chai.expect(resLogin).to.have.status(200);
+    chai.expect(resLogin.body).have.property('token');
+
+    res = await chai.request(url).get('/recipes')
+    const recipe = res.body[0]
+    chai.request(url).put(`/recipes/${recipe._id}`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin',
+        ingredients: 'Frango',
+        preparation: '10 min no forno',
+      }).end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).have.property('name').equal('Receita de frango do Jacquin');
+        chai.expect(res.body).have.property('ingredients').equal('Frango');
+        chai.expect(res.body).have.property('preparation').equal('10 min no forno')
+      });
+
+  });
 });
-
-it.skip('Será validado que não é possível editar receita com token inválido', async () => {
-  let resultRecipes;
-
-  await frisby
-    .post(`${url}/login/`, {
-      email: 'erickjacquin@gmail.com',
-      password: '12345678',
-    })
-    .expect('status', 200)
-    .then((response) => {
-      const { body } = response;
-      const result = JSON.parse(body);
-      return frisby
-        .setup({
-          request: {
-            headers: {
-              Authorization: result.token,
-              'Content-Type': 'application/json',
-            },
-          },
-        })
-        .post(`${url}/recipes`, {
-          name: 'Receita de frango do Jacquin',
-          ingredients: 'Frango',
-          preparation: '10 min no forno',
-        })
-        .expect('status', 201)
-        .then((responseRecipes) => {
-          const { body } = responseRecipes;
-          resultRecipes = JSON.parse(body);
-        });
-    });
-
-  await frisby
-    .setup({
-      request: {
-        headers: {
-          Authorization: '99999999',
-          'Content-Type': 'application/json',
-        },
-      },
-    })
-    .put(`${url}/recipes/${resultRecipes.recipe._id}`, {
-      name: 'Receita de frango do Jacquin editado',
-      ingredients: 'Frango editado',
-      preparation: '10 min no forno editado',
-    })
-    .expect('status', 401)
-    .then((response) => {
-      const { body } = response;
-      const result = JSON.parse(body);
-      expect(result.message).toBe('jwt malformed');
-    });
-});
-
-it.skip('Será validado que é possível editar receita estando autenticado', async () => {
-  let result;
-  let resultRecipes;
-
-  await frisby
-    .post(`${url}/login/`, {
-      email: 'erickjacquin@gmail.com',
-      password: '12345678',
-    })
-    .expect('status', 200)
-    .then((response) => {
-      const { body } = response;
-      result = JSON.parse(body);
-      return frisby
-        .setup({
-          request: {
-            headers: {
-              Authorization: result.token,
-              'Content-Type': 'application/json',
-            },
-          },
-        })
-        .post(`${url}/recipes`, {
-          name: 'Receita de frango do Jacquin',
-          ingredients: 'Frango',
-          preparation: '10 min no forno',
-        })
-        .expect('status', 201)
-        .then((responseRecipes) => {
-          const { body } = responseRecipes;
-          resultRecipes = JSON.parse(body);
-        });
-    });
-
-  await frisby
-    .setup({
-      request: {
-        headers: {
-          Authorization: result.token,
-          'Content-Type': 'application/json',
-        },
-      },
-    })
-    .put(`${url}/recipes/${resultRecipes.recipe._id}`, {
-      name: 'Receita de frango do Jacquin editado',
-      ingredients: 'Frango editado',
-      preparation: '10 min no forno editado',
-    })
-    .expect('status', 200)
-    .then((response) => {
-      const { body } = response;
-      result = JSON.parse(body);
-      expect(result).toHaveProperty('_id');
-      expect(result).toHaveProperty('userId');
-      expect(result.name).toBe('Receita de frango do Jacquin editado');
-      expect(result.ingredients).toBe('Frango editado');
-      expect(result.preparation).toBe('10 min no forno editado');
-    });
-});
-
-it.skip('Será validado que é possível editar receita com usuário admin', async () => {
-  let resultRecipes;
-  let resultAdmin;
-
-  await frisby
-    .post(`${url}/login/`, {
-      email: 'erickjacquin@gmail.com',
-      password: '12345678',
-    })
-    .expect('status', 200)
-    .then((response) => {
-      const { body } = response;
-      const result = JSON.parse(body);
-      return frisby
-        .setup({
-          request: {
-            headers: {
-              Authorization: result.token,
-              'Content-Type': 'application/json',
-            },
-          },
-        })
-        .post(`${url}/recipes`, {
-          name: 'Receita de frango do Jacquin',
-          ingredients: 'Frango',
-          preparation: '10 min no forno',
-        })
-        .expect('status', 201)
-        .then((responseRecipes) => {
-          const { body } = responseRecipes;
-          resultRecipes = JSON.parse(body);
-        });
-    });
-
-  await frisby
-    .post(`${url}/login/`, {
-      email: 'root@email.com',
-      password: 'admin',
-    })
-    .expect('status', 200)
-    .then((response) => {
-      const { body } = response;
-      resultAdmin = JSON.parse(body);
-    });
-
-  await frisby
-    .setup({
-      request: {
-        headers: {
-          Authorization: resultAdmin.token,
-          'Content-Type': 'application/json',
-        },
-      },
-    })
-    .put(`${url}/recipes/${resultRecipes.recipe._id}`, {
-      name: 'Receita de frango do Jacquin editado',
-      ingredients: 'Frango editado',
-      preparation: '10 min no forno editado',
-    })
-    .expect('status', 200)
-    .then((response) => {
-      const { body } = response;
-      const result = JSON.parse(body);
-      expect(result).toHaveProperty('_id');
-      expect(result).toHaveProperty('userId');
-      expect(result.name).toBe('Receita de frango do Jacquin editado');
-      expect(result.ingredients).toBe('Frango editado');
-      expect(result.preparation).toBe('10 min no forno editado');
-    });
-});
-});
-
-
