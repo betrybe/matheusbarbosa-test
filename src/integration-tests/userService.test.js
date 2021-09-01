@@ -6,6 +6,7 @@ const { MongoClient } = require('mongodb');
 const mongoDbUrl = 'mongodb://mongodb:27017/Cookmaster';
 
 
+
 describe('Teste da funcao addUser', () => {
     let connection;
     let db;

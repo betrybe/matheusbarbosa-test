@@ -8,6 +8,7 @@ const app = require('../api/app')
 
 
 
+
 describe('1 - Crie um endpoint para o cadastro de usuários', () => {
   var connection;
   var db;
@@ -35,6 +36,7 @@ describe('1 - Crie um endpoint para o cadastro de usuários', () => {
 
   it('Será validado que o campo "name" é obrigatório', function () {
     chai.request(app).post('/users')
+
       .send({
         email: 'asda@gmail.com',
         password: '12345678',
@@ -46,6 +48,7 @@ describe('1 - Crie um endpoint para o cadastro de usuários', () => {
 
   it('Será validado que o campo "email" é obrigatório', function () {
     chai.request(app).post('/users')
+
       .send({
         name: 'Erick Jacquin',
         password: '12345678',
@@ -128,11 +131,6 @@ describe('1 - Crie um endpoint para o cadastro de usuários', () => {
         name: 'Erick Jacquin',
         email: 'teste@teste.com',
         password: '123456'
-      }).end((err, res2) => {
-        chai.expect(res2).to.have.status(409);
-        chai.expect(res2.body.message).to.equal('Email already registered');
-      });
-  });
 
   it('Será validado que é possível ao cadastrar usuário, o valor do campo "role" tenha o valor "user"', function () {
     chai.request(app).post('/users')

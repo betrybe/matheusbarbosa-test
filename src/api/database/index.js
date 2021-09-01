@@ -5,6 +5,7 @@ mongoose.connect('mongodb://mongodb:27017/Cookmaster', {
     useUnifiedTopology: true,
     useCreateIndex: true,
   });
+
 mongoose.Promise = global.Promise;
 
 module.exports = mongoose;

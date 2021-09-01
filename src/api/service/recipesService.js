@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongoose').Types.ObjectId;
+
 const Recipes = require('../models/Recipes');
 
 async function addImage(id, arqExt) {
@@ -26,6 +27,7 @@ const find = async (id) => {
             return 'not found';
         }    
         const recipes = await Recipes.findById(new ObjectId(id));
+
         if (!recipes) { return 'not found'; }
         
         return {
@@ -53,8 +55,8 @@ const edit = async (name, ingredients, preparation, id) => {
     await Recipes.updateOne(filter, update);
     const recipesEdit = await Recipes.findOne(filter);
     // if (!recipesEdit) return 'missing';
-
     return recipesEdit;
+
 };
 
 const deletar = async (id, reqUser) => {
@@ -62,7 +64,8 @@ const deletar = async (id, reqUser) => {
 
     if (!id) return 'missing';
 
-    const recipe = await Recipes.findById(filter);
+  const recipe = await Recipes.findById(filter);
+
 
     if (reqUser.role !== 'admin' && reqUser.id !== recipe.userId) {
         return 'missing';
