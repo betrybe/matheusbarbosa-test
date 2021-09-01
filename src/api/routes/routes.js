@@ -17,9 +17,9 @@ router.get('/recipes/:id', recipesController.findOne);
 router.post('/recipes', authMiddleware, recipesController.create);
 router.put('/recipes/:id', authMiddleware, recipesController.edit);
 router.delete('/recipes/:id', authMiddleware, recipesController.exclude);
+
 router.put('/recipes/:id/image', fileUpload.single('image'),
  authMiddleware, recipesController.addImage);
-router.use('/images', express.static(path.join(__dirname, '../..', 'uploads')));
-
+router.use('/images', express.static(path.join(__dirname, '..', 'uploads')));
 
 module.exports = router;
