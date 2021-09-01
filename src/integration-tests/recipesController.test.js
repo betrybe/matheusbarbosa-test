@@ -435,3 +435,106 @@ describe('7 - Crie um endpoint para a edição de uma receita', () => {
 
   });
 });
+
+describe('8 - Crie um endpoint para a exclusão de uma receita', () => {
+  let connection;
+  let db;
+
+  before(async () => {
+    connection = await MongoClient.connect(mongoDbUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    db = connection.db('Cookmaster');
+  });
+
+  beforeEach(async () => {
+    await db.collection('users').deleteMany({ });
+    await db.collection('recipes').deleteMany({ });
+    const users = [
+      { name: 'admin', email: 'root@email.com', password: 'admin', role: 'admin' },
+      {
+        name: 'Erick Jacquin',
+        email: 'erickjacquin@gmail.com',
+        password: '12345678',
+        role: 'user',
+      },
+    ];
+    await db.collection('users').insertMany(users);
+    const ListRecipes = [
+      {
+        name: 'banana caramelizada',
+        ingredients: 'banana, açúcar',
+        preparation: 'coloque o açúcar na frigideira até virar caramelo e jogue a banana',
+      },
+    ];
+    await db.collection('recipes').insertMany(ListRecipes);
+  });
+
+  after(async () => {
+    await connection.close();
+  });
+
+  it('Será validado que não é possível excluir receita sem estar autenticado', async () => {
+    res = await chai.request(app).get('/recipes')
+    const recipe = res.body[0]
+    chai.request(app).delete(`/recipes/${recipe._id}`)
+      .end((err, res) => {
+        chai.expect(res).to.have.status(401);
+        chai.expect(res.body).property('message').equal('missing auth token')
+      });
+  });
+
+  it('Será validado que não é possível excluir receita com token invalido', async () => {
+    res = await chai.request(app).get('/recipes')
+    const recipe = res.body[0]
+    chai.request(app).delete(`/recipes/${recipe._id}`)
+      .set({
+        Authorization: 'sadasdasdasadfa212r32.',
+        'Content-Type': 'application/json',
+      })
+      .end((err, res) => {
+        chai.expect(res).to.have.status(401);
+        chai.expect(res.body).property('message').equal('jwt malformed')
+      });
+  });
+
+  it('Será validado que é possível excluir receita estando autenticado', async () => {
+    const resLogin = await chai.request(app).post('/login')
+      .send({
+        email: 'root@email.com',
+        password: 'admin'
+      })
+    chai.expect(resLogin).to.have.status(200);
+    chai.expect(resLogin.body).have.property('token');
+
+    const newRecipe = await chai.request(app).post(`/recipes`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin3',
+        ingredients: 'Frango3',
+        preparation: '10 min no forno3',
+      });
+    chai.expect(newRecipe).to.have.status(201);
+    chai.expect(newRecipe.body.recipe).have.property('_id')
+    chai.expect(newRecipe.body.recipe).have.property('name').equal('Receita de frango do Jacquin3');
+    chai.expect(newRecipe.body.recipe).have.property('ingredients').equal('Frango3');
+    chai.expect(newRecipe.body.recipe).have.property('preparation').equal('10 min no forno3')
+
+    chai.request(app).delete(`/recipes/${newRecipe.body.recipe._id}`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin2',
+        ingredients: 'Frango2',
+        preparation: '10 min no forno2',
+      }).end((err, res) => {
+        chai.expect(res).to.have.status(204);
+      });
+  });
+});

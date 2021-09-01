@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Recipes = require('../models/Recipes');
 
 async function addImage(id, arqExt) {
@@ -23,8 +22,7 @@ const list = async () => {
 
 const find = async (id) => {
     try {
-        const NEWid = mongoose.Types.ObjectId(id);
-        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        if (!ObjectId.isValid(id)) {
             return 'not found';
         }    
         const recipes = await Recipes.findById(NEWid);
