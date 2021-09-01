@@ -8,6 +8,7 @@ const url = 'http://localhost:3000';
 describe('6 - Crie uma query em mongo que insira uma pessoa usuária com permissões de admin', () => {
   let connection;
   let db;
+  
 
   beforeAll(async () => {
     connection = await MongoClient.connect(mongoDbUrl, {
