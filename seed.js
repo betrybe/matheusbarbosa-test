@@ -2,7 +2,7 @@
 const MongoClient = require("mongodb").MongoClient;
 
 async function seedDB() {
-    const client = new MongoClient('mongodb://mongodb:27017/Cookmaster', {
+    const client = new MongoClient('mongodb://localhost/Cookmaster', {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     });
