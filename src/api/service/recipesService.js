@@ -26,7 +26,7 @@ const find = async (id) => {
         if (!ObjectId.isValid(id)) {
             return 'not found';
         }    
-        const recipes = await Recipes.findById(id);
+        const recipes = await Recipes.findById(new ObjectId(id));
         if (!recipes) { return 'not found'; }
         
         return {
@@ -52,19 +52,13 @@ const create = async (name, ingredients, preparation, reqUser) => {
 const edit = async (name, ingredients, preparation, id) => {
     const filter = { _id: id };
     const update = { name, ingredients, preparation };
-    const recipes = await Recipes.findOne(filter);
+    const recipes = await Recipes.findById(id);
     if (!recipes) return 'missing';
     await Recipes.updateOne(filter, update);
     const recipesEdit = await Recipes.findOne(filter);
     // if (!recipesEdit) return 'missing';
 
-    return {
-        _id: recipesEdit.id,
-        userId: recipesEdit.userId,
-        name: recipesEdit.name,
-        ingredients: recipesEdit.ingredients,
-        preparation: recipesEdit.preparation,
-    };
+    return recipesEdit;
 };
 
 const deletar = async (id, reqUser) => {

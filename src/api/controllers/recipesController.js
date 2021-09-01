@@ -3,7 +3,6 @@ const recipesService = require('../service/recipesService');
 
 const addImage = async (req, res) => {
     const recipe = await recipesService.addImage(req.params.id, req.arqExt);
-
     return res.status(200).send(recipe);
 };
 
@@ -33,7 +32,7 @@ const edit = async (req, res) => {
     const { name, ingredients, preparation } = req.body;
     const recipe = await recipesService.edit(name, ingredients, preparation, req.params.id);
     if (recipe === 'missing') {
-        res.status(404).send({ message: 'missing data.' });
+        return res.status(404).send({ message: 'missing data.' });
     } 
     return res.status(200).send(recipe);
 };
