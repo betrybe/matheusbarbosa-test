@@ -1,4 +1,3 @@
-const Recipes = require('../models/Recipes');
 const recipesService = require('../service/recipesService');
 
 const addImage = async (req, res) => {
@@ -38,12 +37,10 @@ const edit = async (req, res) => {
 };
 
 const exclude = async (req, res) => {
-    const filter = { _id: req.params.id };
     const recipe = await recipesService.deletar(req.params.id, req.user);
     if (recipe === 'missing') {
         return res.status(401).send({ message: 'missing auth token' });
     }
-    await Recipes.deleteOne(filter);
     return res.status(204).send();
 };
 
