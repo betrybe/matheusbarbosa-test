@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+const { ObjectId } = require('mongoose').Types.ObjectId;
+
 const Recipes = require('../models/Recipes');
 
 async function addImage(id, arqExt) {
@@ -22,12 +23,11 @@ const list = async () => {
 };
 
 const find = async (id) => {
-    try {
-        const NEWid = mongoose.Types.ObjectId(id);
-        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        if (!ObjectId.isValid(id)) {
             return 'not found';
         }    
-        const recipes = await Recipes.findById(NEWid);
+        const recipes = await Recipes.findById(new ObjectId(id));
+
         if (!recipes) { return 'not found'; }
         
         return {
@@ -36,9 +36,6 @@ const find = async (id) => {
             ingredients: recipes.ingredients,
             preparation: recipes.preparation,
         };
-    } catch (err) {
-        return 'not found';
-    }   
 };
 
 const create = async (name, ingredients, preparation, reqUser) => {
@@ -53,19 +50,13 @@ const create = async (name, ingredients, preparation, reqUser) => {
 const edit = async (name, ingredients, preparation, id) => {
     const filter = { _id: id };
     const update = { name, ingredients, preparation };
-    const recipes = await Recipes.findOne(filter);
+    const recipes = await Recipes.findById(id);
     if (!recipes) return 'missing';
     await Recipes.updateOne(filter, update);
     const recipesEdit = await Recipes.findOne(filter);
     // if (!recipesEdit) return 'missing';
+    return recipesEdit;
 
-    return {
-        _id: recipesEdit.id,
-        userId: recipesEdit.userId,
-        name: recipesEdit.name,
-        ingredients: recipesEdit.ingredients,
-        preparation: recipesEdit.preparation,
-    };
 };
 
 const deletar = async (id, reqUser) => {
@@ -73,7 +64,8 @@ const deletar = async (id, reqUser) => {
 
     if (!id) return 'missing';
 
-    const recipe = await Recipes.findOne(filter);
+  const recipe = await Recipes.findById(filter);
+
 
     if (reqUser.role !== 'admin' && reqUser.id !== recipe.userId) {
         return 'missing';
