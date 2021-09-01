@@ -1,13 +1,11 @@
 const { MongoClient } = require('mongodb');
 
-const mongoDbUrl = 'mongodb://mongodb:27017/Cookmaster';
+const mongoDbUrl = 'mongodb://localhost:27017/Cookmaster';
 const chai = require("chai");
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
 const path = require('path');
-// const app = require('../api/app')
-
-const app = 'http://localhost:3000';
+const app = require('../api/app')
 
 
 
@@ -40,6 +38,13 @@ describe('3 - Crie um endpoint para o cadastro de receitas', () => {
 
   after(async () => {
     await connection.close();
+  });
+
+  it('Será validado que o server está ativo', async () => {
+   chai.request(app)
+      .get('/').end((err, res) => {
+        chai.expect(res).not.false
+      });
   });
 
   it('Será validado que não é possível cadastrar receita sem o campo "name"', async () => {
@@ -549,6 +554,46 @@ describe('8 - Crie um endpoint para a exclusão de uma receita', () => {
       });
   });
 
+  it('Será validado que não é possível excluir receita que não é sua com usuario user.', async () => {
+    const admLogin = await chai.request(app).post('/login')
+      .send({
+        email: 'root@email.com',
+        password: 'admin'
+      })
+    chai.expect(admLogin).to.have.status(200);
+    chai.expect(admLogin.body).have.property('token');
+    res = await chai.request(app).get('/recipes')
+
+    const userLogin = await chai.request(app).post('/login')
+      .send({
+        email: 'erickjacquin@gmail.com',
+        password: '12345678'
+      })
+    chai.expect(userLogin).to.have.status(200);
+    chai.expect(userLogin.body).have.property('token');
+
+    const newRecipe = await chai.request(app).post(`/recipes`)
+      .set({
+        Authorization: admLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Frango assado',
+        preparation: '10 min no forno',
+        ingredients: 'frango'
+      })
+
+
+      chai.request(app).delete(`/recipes/${newRecipe.body.recipe._id}`)
+      .set({
+        Authorization: userLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .end((err, res) => {
+        chai.expect(res).to.have.status(401);
+      });
+  });
+
   it('Será validado que é possível excluir receita estando autenticado', async () => {
     const resLogin = await chai.request(app).post('/login')
       .send({
@@ -588,3 +633,130 @@ describe('8 - Crie um endpoint para a exclusão de uma receita', () => {
       });
   });
 });
+
+describe('9 - Crie um endpoint para a adição de uma imagem a uma receita', () => {
+  let connection;
+  let db;
+
+  before(async () => {
+    connection = await MongoClient.connect(mongoDbUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    db = connection.db('Cookmaster');
+  });
+
+  beforeEach(async () => {
+    await db.collection('users').deleteMany({ });
+    await db.collection('recipes').deleteMany({ });
+    const users = [
+      { name: 'admin', email: 'root@email.com', password: 'admin', role: 'admin' },
+      {
+        name: 'Erick Jacquin',
+        email: 'erickjacquin@gmail.com',
+        password: '12345678',
+        role: 'user',
+      },
+    ];
+    await db.collection('users').insertMany(users);
+    const ListRecipes = [
+      {
+        name: 'banana caramelizada',
+        ingredients: 'banana, açúcar',
+        preparation: 'coloque o açúcar na frigideira até virar caramelo e jogue a banana',
+      },
+    ];
+    await db.collection('recipes').insertMany(ListRecipes);
+  });
+
+  after(async () => {
+    await connection.close();
+  });
+
+  it('Será validado que é possível enviar foto com usuário autenticado', async () => {
+
+    const resLogin = await chai.request(app).post('/login')
+      .send({
+        email: 'root@email.com',
+        password: 'admin'
+      })
+    chai.expect(resLogin).to.have.status(200);
+    chai.expect(resLogin.body).have.property('token');
+
+    const newRecipe = await chai.request(app).post(`/recipes`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin3',
+        ingredients: 'Frango3',
+        preparation: '10 min no forno3',
+      });
+    chai.expect(newRecipe).to.have.status(201);
+    chai.expect(newRecipe.body.recipe).have.property('_id')
+    chai.expect(newRecipe.body.recipe).have.property('name').equal('Receita de frango do Jacquin3');
+    chai.expect(newRecipe.body.recipe).have.property('ingredients').equal('Frango3');
+    chai.expect(newRecipe.body.recipe).have.property('preparation').equal('10 min no forno3')
+
+    chai.request(app).put(`/recipes/${newRecipe.body.recipe._id}/image`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .set('Content-Type', 'multipart/form-data')
+      .attach('image', path.resolve(__dirname, '..', 'uploads', 'ratinho.jpg'))
+      .end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).have.property('_id');
+        chai.expect(res.body).have.property('userId');
+        chai.expect(res.body).have.property('name');
+        chai.expect(res.body).have.property('ingredients');
+        chai.expect(res.body).have.property('preparation');
+
+      });
+  });
+
+  it('Será validado que ao enviar foto, o nome da imagem é alterada para o id da receita', async () => {
+    const resLogin = await chai.request(app).post('/login')
+      .send({
+        email: 'root@email.com',
+        password: 'admin'
+      })
+    chai.expect(resLogin).to.have.status(200);
+    chai.expect(resLogin.body).have.property('token');
+
+    const newRecipe = await chai.request(app).post(`/recipes`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .send({
+        name: 'Receita de frango do Jacquin3',
+        ingredients: 'Frango3',
+        preparation: '10 min no forno3',
+      });
+    chai.expect(newRecipe).to.have.status(201);
+    chai.expect(newRecipe.body.recipe).have.property('_id')
+    chai.expect(newRecipe.body.recipe).have.property('name').equal('Receita de frango do Jacquin3');
+    chai.expect(newRecipe.body.recipe).have.property('ingredients').equal('Frango3');
+    chai.expect(newRecipe.body.recipe).have.property('preparation').equal('10 min no forno3')
+
+    chai.request(app).put(`/recipes/${newRecipe.body.recipe._id}/image`)
+      .set({
+        Authorization: resLogin.body.token,
+        'Content-Type': 'application/json',
+      })
+      .attach('image', path.resolve(__dirname, '..', 'uploads', 'ratinho.jpg'))
+      .end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        console.log('isso aqui não está sendo executado ')
+        chai.expect(res.body).have.property('_id');
+        chai.expect(res.body).have.property('userId');
+        chai.expect(res.body).have.property('name');
+        chai.expect(res.body).have.property('ingredients');
+        chai.expect(res.body).have.property('preparation');
+      });
+  });
+});
+

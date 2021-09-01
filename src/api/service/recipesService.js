@@ -22,7 +22,6 @@ const list = async () => {
 };
 
 const find = async (id) => {
-    try {
         if (!ObjectId.isValid(id)) {
             return 'not found';
         }    
@@ -35,9 +34,6 @@ const find = async (id) => {
             ingredients: recipes.ingredients,
             preparation: recipes.preparation,
         };
-    } catch (err) {
-        return 'not found';
-    }   
 };
 
 const create = async (name, ingredients, preparation, reqUser) => {
@@ -66,7 +62,7 @@ const deletar = async (id, reqUser) => {
 
     if (!id) return 'missing';
 
-    const recipe = await Recipes.findOne(filter);
+    const recipe = await Recipes.findById(filter);
 
     if (reqUser.role !== 'admin' && reqUser.id !== recipe.userId) {
         return 'missing';
