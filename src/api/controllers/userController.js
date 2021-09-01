@@ -1,10 +1,12 @@
 const userService = require('../service/userService');
 
 const createUser = async (req, res) => {
-    const { name, email, password } = req.body;
-    
+    const { name,
+        email,
+        password } = req.body;
+
     const user = await userService.addUser(name, email, password);
-    
+
     if (user === 'invalid') {
         return res.status(400).send({ message: 'Invalid entries. Try again.' });
     }
