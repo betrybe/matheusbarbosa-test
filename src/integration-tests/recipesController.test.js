@@ -5,7 +5,9 @@ const chai = require("chai");
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
 const path = require('path');
-const app = require('../api/app')
+// const app = require('../api/app')
+
+const app = 'http://localhost:3000';
 
 
 
