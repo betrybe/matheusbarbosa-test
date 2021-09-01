@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongoose').Types.ObjectId;
 const Recipes = require('../models/Recipes');
 
 async function addImage(id, arqExt) {
@@ -25,7 +26,7 @@ const find = async (id) => {
         if (!ObjectId.isValid(id)) {
             return 'not found';
         }    
-        const recipes = await Recipes.findById(NEWid);
+        const recipes = await Recipes.findById(id);
         if (!recipes) { return 'not found'; }
         
         return {

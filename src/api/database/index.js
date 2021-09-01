@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb://mongodb:27017/Cookmaster', {
+mongoose.connect('mongodb://localhost/Cookmaster', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
