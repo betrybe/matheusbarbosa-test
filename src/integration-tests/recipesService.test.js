@@ -2,7 +2,7 @@ const chai = require('chai');
 const recipesService = require('../api/service/recipesService');
 const should = chai.should();
 const { MongoClient } = require('mongodb');
-const mongoDbUrl = 'mongodb://localhost:27017/Cookmaster';
+const mongoDbUrl = 'mongodb://mongodb:27017/Cookmaster';
 
 describe('Teste da funcao list', () => {
     let connection;
