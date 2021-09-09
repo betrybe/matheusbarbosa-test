@@ -4,7 +4,7 @@ const mongoDbUrl = 'mongodb://mongodb:27017/Cookmaster';
 const chai = require("chai");
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
-const app = require('../api/app')
+const app = require('../api/server')
 
 
 
